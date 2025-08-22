@@ -835,6 +835,97 @@ const mockBooks: Book[] = [
 }
 ];
 
+interface RequestModalProps {
+  book: Book | null;
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: (bookId: string) => void;
+}
+
+// RequestModal component with blurred background and centered pop-up
+const RequestModal = ({ book, isOpen, onClose, onConfirm }: RequestModalProps) => {
+  if (!isOpen || !book) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* Backdrop with blur effect */}
+      <div 
+        className="fixed inset-0 bg-black/70 backdrop-blur-md transition-opacity duration-300"
+        onClick={onClose}
+      />
+      
+      {/* Modal container */}
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 transform transition-all duration-300 scale-100 opacity-100 max-h-[90vh] overflow-hidden">
+        {/* Modal Header */}
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-6 rounded-t-2xl">
+          <h3 className="text-2xl font-bold text-center">
+            Confirm Book Request
+          </h3>
+        </div>
+        
+        {/* Modal Content */}
+        <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+          <div className="mb-6 text-center">
+            <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <BookOpen className="w-10 h-10 text-blue-600" />
+            </div>
+            <p className="text-gray-600 mb-2">
+              You are requesting to borrow:
+            </p>
+            <p className="font-bold text-xl text-gray-900 mb-2">{book.title}</p>
+            <p className="text-gray-600">by {book.author}</p>
+          </div>
+
+          {/* Borrowing Terms */}
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 mb-6">
+            <h4 className="font-semibold text-blue-900 mb-3 flex items-center justify-center">
+              <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+              Borrowing Terms
+            </h4>
+            <ul className="text-sm text-blue-800 space-y-2">
+              <li className="flex items-start">
+                <span className="text-blue-600 mr-2">•</span>
+                <span>Maximum borrowing period: 21 days</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-blue-600 mr-2">•</span>
+                <span>Maximum of 5 books at a time</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-blue-600 mr-2">•</span>
+                <span>Return books on time to avoid penalties</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-blue-600 mr-2">•</span>
+                <span>Books must be returned in good condition</span>
+              </li>
+            </ul>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-4 justify-center pt-4">
+            <button
+              onClick={onClose}
+              className="px-6 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors font-medium"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => onConfirm(book.id)}
+              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-xl hover:from-blue-700 hover:to-indigo-800 transition-all duration-300 shadow-md font-semibold"
+            >
+              Confirm Request
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
 export default function BookCatalog() {
   const [books, setBooks] = useState<Book[]>([]);
   const [filteredBooks, setFilteredBooks] = useState<Book[]>([]);
@@ -845,6 +936,8 @@ export default function BookCatalog() {
   const [sortOrder, setSortOrder] = useState('asc');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const booksPerPage = 12;
@@ -941,24 +1034,44 @@ export default function BookCatalog() {
     }
   };
 
-  const handleBorrowRequest = async (bookId: string) => {
+const handleBorrowRequest = (bookId: string) => {
+    // Find the book by ID
+    const bookToBorrow = books.find(book => book.id === bookId);
+    
+    if (!bookToBorrow) return;
+    
+    if (mockUser.borrowedBooks.includes(bookId)) {
+      alert('You have already borrowed this book.');
+      return;
+    }
+
+    if (mockUser.borrowedBooks.length >= 5) {
+      alert('You have reached your borrowing limit of 5 books.');
+      return;
+    }
+    
+    // Set the selected book and open the modal
+    setSelectedBook(bookToBorrow);
+    setIsModalOpen(true);
+  };
+
+  const handleConfirmRequest = async (bookId: string) => {
     try {
-      if (mockUser.borrowedBooks.includes(bookId)) {
-        alert('You have already borrowed this book.');
-        return;
-      }
-
-      if (mockUser.borrowedBooks.length >= 5) {
-        alert('You have reached your borrowing limit of 5 books.');
-        return;
-      }
-
       // Simulate API call
       alert(`Book requested successfully! Book ID: ${bookId}`);
+      
+      // Close the modal
+      setIsModalOpen(false);
+      setSelectedBook(null);
       
     } catch (err) {
       alert('Failed to request book. Please try again.');
     }
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedBook(null);
   };
 
   // Pagination
@@ -1230,6 +1343,12 @@ export default function BookCatalog() {
           </div>
         )}
       </div>
+        <RequestModal
+          book={selectedBook}
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          onConfirm={handleConfirmRequest}
+        />
     </div>
   );
 }

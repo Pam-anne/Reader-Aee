@@ -1,13 +1,13 @@
 "use client";
 
 import React, { ChangeEvent, useState } from 'react';
-import { User, Book, Shield, Eye, EyeOff, Mail, Lock, UserCheck } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { User, Book, Shield, Eye, EyeOff, Mail, Lock, UserCheck, BookOpen } from 'lucide-react';
 
 const LibrarySignUp = () => {
 // Type definitions
 interface RegisterFormData {
-  firstName: string;
-  lastName: string;
+  Name: string;
   email: string;
   password: string;
   confirmPassword: string;
@@ -17,8 +17,7 @@ interface RegisterFormData {
 }
 
 interface FormErrors {
-  firstName?: string;
-  lastName?: string;
+  Name?: string;
   email?: string;
   password?: string;
   confirmPassword?: string;
@@ -34,8 +33,7 @@ interface Role {
 }
 
   const [formData, setFormData] = useState<RegisterFormData>({
-    firstName: '',
-    lastName: '',
+    Name: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -44,6 +42,7 @@ interface Role {
     phone: ''
   });
 
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -94,12 +93,8 @@ const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
   const validateForm = () => {
     const newErrors: FormErrors = {};
     
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = 'First name is required';
-    }
-    
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = 'Last name is required';
+    if (!formData.Name.trim()) {
+      newErrors.Name = 'Name is required';
     }
     
     if (!formData.email.trim()) {
@@ -142,12 +137,17 @@ const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       // Success simulation
-      alert(`Registration successful! Welcome ${formData.firstName}, you've been registered as a ${roles.find(r => r.id === formData.role)?.name}`);
-      
+      if (formData.role === 'reader') {
+        router.push('/reader-dashboard');
+      } else if (formData.role === 'librarian') {
+        router.push('/librarian/dashboard');
+      } else {
+        router.push('/admin/dashboard');
+      }
+
       // Reset form
       setFormData({
-        firstName: '',
-        lastName: '',
+        Name: '',
         email: '',
         password: '',
         confirmPassword: '',
@@ -169,11 +169,11 @@ const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
       <div className="max-w-2xl w-full">
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-          {/* Header */}
-          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-8 py-6">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-8 py-6">
             <div className="flex items-center justify-center space-x-3 mb-2">
-              <Book className="h-8 w-8 text-white" />
-              <h1 className="text-2xl font-bold text-white">Library Management System</h1>
+              <BookOpen className="w-8 h-8 text-white" />
+              <h1 className="text-2xl font-bold text-white mb-2">Maktaba Digital</h1>
             </div>
             <p className="text-indigo-100 text-center">Create your account to get started</p>
           </div>
@@ -232,42 +232,23 @@ const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  First Name *
+                  Full Name *
                 </label>
                 <input
                   type="text"
-                  name="firstName"
-                  value={formData.firstName}
+                  name="Name"
+                  value={formData.Name}
                   onChange={handleInputChange}
                   className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${
-                    errors.firstName ? 'border-red-300' : 'border-gray-300'
+                    errors.Name ? 'border-red-300' : 'border-gray-300'
                   }`}
                   placeholder="Enter your first name"
                 />
-                {errors.firstName && (
-                  <p className="mt-1 text-sm text-red-600">{errors.firstName}</p>
+                {errors.Name && (
+                  <p className="mt-1 text-sm text-red-600">{errors.Name}</p>
                 )}
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Last Name *
-                </label>
-                <input
-                  type="text"
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={handleInputChange}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${
-                    errors.lastName ? 'border-red-300' : 'border-gray-300'
-                  }`}
-                  placeholder="Enter your last name"
-                />
-                {errors.lastName && (
-                  <p className="mt-1 text-sm text-red-600">{errors.lastName}</p>
-                )}
-              </div>
-            </div>
+            
 
             {/* Contact Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -275,7 +256,7 @@ const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Email Address *
                 </label>
-                <div className="relative">
+                <div className="w-full relative">
                   <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <input
                     type="email"
@@ -292,20 +273,7 @@ const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
                   <p className="mt-1 text-sm text-red-600">{errors.email}</p>
                 )}
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Phone Number
-                </label>
-                <input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors"
-                  placeholder="Enter your phone number"
-                />
-              </div>
+            </div>
             </div>
 
             {/* Library ID for Librarian/Admin */}
@@ -415,7 +383,7 @@ const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
             <div className="text-center">
               <p className="text-sm text-gray-600">
                 Already have an account?{' '}
-                <a href="#" className="text-indigo-600 hover:text-indigo-700 font-medium">
+                <a href="/login" className="text-indigo-600 hover:text-indigo-700 font-medium">
                   Sign in here
                 </a>
               </p>
