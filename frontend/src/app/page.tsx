@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 
 // Define TypeScript interfaces
 interface User {
-  userId: string;
+  id: string;
   name: string;
   email: string;
   role: string;
@@ -100,20 +100,33 @@ const isValidEmail = (email: string): boolean => {
 const loginAPI = async (credentials: LoginCredentials): Promise<{ token: string; user: User }> => {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 1500));
-  
-  // Mock successful login for demo purposes
-  if (credentials.email === 'reader@maktaba.com' && credentials.password === 'password123') {
+
+  try {
+    const response = await fetch('http://127.0.0.1:8000/api/login/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(credentials)
+    });
+    if (!response.ok) {
+      throw new Error('Invalid email or password');
+    }
+    const data = await response.json();
+
+    console.log('Login API response status:', data);
     return {
-      token: 'mock-jwt-token-12345',
+      token: data.access_token,
       user: {
-        userId: '1',
-        name: 'John Doe',
-        email: credentials.email,
-        role: 'reader'
+        id: data.user.id,
+        name: data.user.name,
+        email: data.user.email,
+        role: data.user.role
       }
     };
-  } else {
-    throw new Error('Invalid email or password');
+  } catch (error) {
+    console.error('Login API error:', error);
+    throw new Error('Login failed');
   }
 };
 

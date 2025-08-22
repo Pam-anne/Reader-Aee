@@ -1,71 +1,97 @@
-// src/app/dashboard/page.tsx
 'use client';
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { 
-  BookOpen, 
-  LogOut, 
-  User, 
+import {
+  BookOpen,
+  LogOut,
+  User,
   BookText,
   Library,
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
 
-// Mock user data
-const mockUser = {
-  id: '1',
-  name: 'Pamela Abaki',
-  email: 'pamela@maktaba.com',
-  role: 'reader' as const,
-  borrowLimit: 5,
-  currentlyBorrowed: [
-    { id: '1', title: 'The Great Gatsby', author: 'F. Scott Fitzgerald', dueDate: '2024-01-15' },
-    { id: '2', title: 'To Kill a Mockingbird', author: 'Harper Lee', dueDate: '2024-01-20' }
-  ],
-  pendingRequests: [
-    { id: '3', title: '1984', author: 'George Orwell', requestDate: '2024-01-10' }
-  ]
-};
+interface BorrowRequest {
+  id: number;
+  status: string;
+  borrowed_at: string;
+  due_date: string;
+  book: {
+    id: number;
+    title: string;
+    author: string;
+  };
+}
 
 export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'borrowed' | 'pending'>('borrowed');
   const [currentPage, setCurrentPage] = useState(0);
+  const [pendingRequests, setPendingRequests] = useState<BorrowRequest[]>([]);
 
   const router = useRouter();
 
-  // Pagination setup
-  const books = activeTab === 'borrowed' ? mockUser.currentlyBorrowed : mockUser.pendingRequests;
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+
+  
+  useEffect(() => {
+    const fetchBorrowRequests = async () => {
+      try {
+        const response = await fetch('http://127.0.0.1:8000/api/my-requests', {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch borrow requests');
+        }
+
+        const data = await response.json();
+        setPendingRequests(data.data || []);
+      } catch (error) {
+        console.error('Error fetching requests:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchBorrowRequests();
+  }, [token]);
+
+  
+  const borrowLimit = 3;
+  const currentlyBorrowed = []; 
+  const readingHistoryCount = 0;
+
+  // Tab handling
+  const books =
+    activeTab === 'borrowed'
+      ? currentlyBorrowed
+      : pendingRequests.map((req) => ({
+        id: req.book.id,
+        title: req.book.title,
+        author: req.book.author,
+        requestDate: req.borrowed_at
+      }));
+
+  // Pagination
   const pageSize = 2;
   const totalPages = Math.ceil(books.length / pageSize);
   const paginatedBooks = books.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
 
-  // Simulate loading
-  useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 1000);
-    return () => clearTimeout(timer);
-  }, []);
-
   const handleLogout = () => {
-    console.log('User logged out');
+    localStorage.removeItem('token');
     alert('Logout successful! Redirecting to login...');
     router.push('/');
   };
 
   const handleNavigation = (path: string) => {
-    if (path === '/library') {
-      router.push('/library');
-    } else if (path === '/my-books') {
-      router.push('/my-books');
-    }
+    router.push(path);
   };
 
-  // Format date function
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString();
-  };
+  const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString();
 
   if (isLoading) {
     return (
@@ -87,11 +113,11 @@ export default function DashboardPage() {
             <BookOpen className="w-8 h-8 text-blue-600" />
             <h1 className="text-2xl font-bold text-gray-900">Maktaba Digital</h1>
           </div>
-          
+
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <User className="w-4 h-4" />
-              <span>Welcome, {mockUser.name}</span>
+              <span>Welcome, Reader</span>
             </div>
             <button
               onClick={handleLogout}
@@ -117,25 +143,25 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
             <div className="bg-blue-50 rounded-xl p-6 text-center">
               <BookText className="w-8 h-8 text-blue-600 mx-auto mb-3" />
-              <h3 className="text-2xl font-bold text-blue-900 mb-1">{mockUser.borrowLimit}</h3>
+              <h3 className="text-2xl font-bold text-blue-900 mb-1">{borrowLimit}</h3>
               <p className="text-sm text-blue-700">Borrowing Limit</p>
             </div>
-            
+
             <div className="bg-green-50 rounded-xl p-6 text-center">
               <BookOpen className="w-8 h-8 text-green-600 mx-auto mb-3" />
-              <h3 className="text-2xl font-bold text-green-900 mb-1">{mockUser.currentlyBorrowed.length}</h3>
+              <h3 className="text-2xl font-bold text-green-900 mb-1">{currentlyBorrowed.length}</h3>
               <p className="text-sm text-green-700">Currently Borrowed</p>
             </div>
-            
+
             <div className="bg-yellow-50 rounded-xl p-6 text-center">
               <BookText className="w-8 h-8 text-yellow-600 mx-auto mb-3" />
-              <h3 className="text-2xl font-bold text-yellow-900 mb-1">{mockUser.pendingRequests.length}</h3>
+              <h3 className="text-2xl font-bold text-yellow-900 mb-1">{pendingRequests.length}</h3>
               <p className="text-sm text-yellow-700">Pending Requests</p>
             </div>
-            
+
             <div className="bg-purple-50 rounded-xl p-6 text-center">
               <BookOpen className="w-8 h-8 text-purple-600 mx-auto mb-3" />
-              <h3 className="text-2xl font-bold text-purple-900 mb-1">12</h3>
+              <h3 className="text-2xl font-bold text-purple-900 mb-1">{readingHistoryCount}</h3>
               <p className="text-sm text-purple-700">Reading History</p>
             </div>
           </div>
@@ -156,7 +182,7 @@ export default function DashboardPage() {
                 </div>
               </div>
             </button>
-            
+
             <button
               onClick={() => handleNavigation('/my-books')}
               className="bg-green-600 hover:bg-green-700 text-white p-6 rounded-xl transition-colors group"
@@ -176,24 +202,28 @@ export default function DashboardPage() {
           {/* Tab Navigation */}
           <div className="flex gap-4 mb-6 border-b border-gray-200">
             <button
-              onClick={() => { setActiveTab('borrowed'); setCurrentPage(0); }}
-              className={`pb-2 px-1 border-b-2 transition-colors ${
-                activeTab === 'borrowed'
+              onClick={() => {
+                setActiveTab('borrowed');
+                setCurrentPage(0);
+              }}
+              className={`pb-2 px-1 border-b-2 transition-colors ${activeTab === 'borrowed'
                   ? 'border-blue-600 text-blue-600 font-medium'
                   : 'border-transparent text-gray-600 hover:text-gray-900'
-              }`}
+                }`}
             >
-              Currently Borrowed ({mockUser.currentlyBorrowed.length})
+              Currently Borrowed ({currentlyBorrowed.length})
             </button>
             <button
-              onClick={() => { setActiveTab('pending'); setCurrentPage(0); }}
-              className={`pb-2 px-1 border-b-2 transition-colors ${
-                activeTab === 'pending'
+              onClick={() => {
+                setActiveTab('pending');
+                setCurrentPage(0);
+              }}
+              className={`pb-2 px-1 border-b-2 transition-colors ${activeTab === 'pending'
                   ? 'border-blue-600 text-blue-600 font-medium'
                   : 'border-transparent text-gray-600 hover:text-gray-900'
-              }`}
+                }`}
             >
-              Pending Requests ({mockUser.pendingRequests.length})
+              Pending Requests ({pendingRequests.length})
             </button>
           </div>
 
@@ -205,9 +235,7 @@ export default function DashboardPage() {
                   <h4 className="font-semibold text-gray-900">{book.title}</h4>
                   <p className="text-sm text-gray-600">by {book.author}</p>
                   {'dueDate' in book && (
-                    <p className="text-xs text-gray-500 mt-2">
-                      Due: {formatDate(book.dueDate)}
-                    </p>
+                    <p className="text-xs text-gray-500 mt-2">Due: {formatDate(book.dueDate)}</p>
                   )}
                   {'requestDate' in book && (
                     <p className="text-xs text-gray-500 mt-2">
@@ -235,11 +263,11 @@ export default function DashboardPage() {
                 <ChevronLeft className="w-4 h-4" />
                 Previous
               </button>
-              
+
               <span className="text-sm text-gray-600">
                 Page {currentPage + 1} of {totalPages}
               </span>
-              
+
               <button
                 onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
                 disabled={currentPage === totalPages - 1}
@@ -250,14 +278,6 @@ export default function DashboardPage() {
               </button>
             </div>
           )}
-
-          {/* Development Note */}
-          <div className="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <p className="text-sm text-yellow-800">
-              <strong>Development Note:</strong> This is a mock dashboard using sample data. 
-              Backend integration will be implemented when the API is ready.
-            </p>
-          </div>
         </div>
       </main>
     </div>
