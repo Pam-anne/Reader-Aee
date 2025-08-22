@@ -80,12 +80,6 @@ const useNavigate = () => {
   };
 };
 
-  // const useNavigate = (path: string) => {
-  //   if (path === '/library') {
-  //     router.push('/library');
-  //   } 
-  // };
-
 // Generate mock user requests data
 const generateMockRequests = (): BookRequest[] => {
   const books = [
@@ -518,12 +512,12 @@ const MyBooks: React.FC = () => {
                 <div className="bg-blue-600 p-2 rounded-lg">
                   <BookOpen className="w-6 h-6 text-white" />
                 </div>
-                <h1 className="text-xl font-semibold text-gray-900">My Books</h1>
+                <h1 className="text-xl font-semibold text-gray-900">My Maktaba Books</h1>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <User className="w-4 h-4 text-gray-500" />
-              <span className="text-sm text-gray-700">{user.name}</span>
+              <span className="text-sm text-gray-700">Welcome, {user.name}</span>
             </div>
           </div>
         </div>
