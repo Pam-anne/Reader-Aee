@@ -22,3 +22,5 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+maktaba-system/.next/
+node_modules/
